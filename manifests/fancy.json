@@ -1,0 +1,176 @@
+{
+    "process-sections": [
+        "remove-packages",
+        "add-packages",
+        "remove-files",
+        "add-files",
+        "services"
+    ],
+
+    "sections": {
+        "packages": [ 
+            { "name": "apache2" },
+            { "name": "php5" },
+            { "name": "zabbix-frontend-php" },
+            { "name": "zend-framework" }
+        ],
+        "remove-packages": [ 
+            {
+                "name": "apache2",
+                "prerequisite": [
+                    "services.apache2.is-stopped"
+                ],
+                "ensure": [
+                    "packages.apache2.is-not-installed"
+                ]
+            },
+            {
+                "name": "php5",
+                "prerequisite": [
+                    "packages.apache2.is-not-installed"
+                ],
+                "ensure": [
+                    "packages.php5.is-not-installed"
+                ]
+            }
+        ],
+        "add-packages": [ 
+            {
+                "name": "apache2",
+                "ensure": [
+                    "packages.apache2.is-installed"
+                ]
+            },
+            {
+                "name": "php5",
+                "prerequisite": [
+                    "packages.apache2.is-installed"
+                ],
+                "ensure": [
+                    "packages.php5.is-installed"
+                ]
+            },
+            {
+                "name": "zabbix-frontend-php",
+                "prerequisite": [
+                    "packages.apache2.is-installed",
+                    "packages.php5.is-installed"
+                ],
+                "ensure": [
+                    "packages.zabbix-frontend-php.is-installed"
+                ],
+                "on-change": [
+                    "services.apache2.force-restart"
+                ]
+            },
+            {
+                "name": "zend-framework",
+                "prerequisite": [
+                    "packages.apache2.is-installed",
+                    "packages.php5.is-installed"
+                ],
+                "ensure": [
+                    "packages.zend-framework.is-installed"
+                ],
+                "on-change": [
+                    "services.apache2.force-restart"
+                ]
+            }
+        ],
+
+        "services": [
+            { 
+                "name": "apache2",
+                "ensure": [
+                    "is-running"
+                ]
+            }
+        ],
+        "remove-files": [
+            { 
+                "name": "/var/www/html/info.php",
+                "ensure": [
+                    "files./var/www/html/info.php.file-does-not-exist"
+                ]
+            }
+        ],
+        "files": [
+            { 
+                "name": "/var/www/html/info.php",
+                "definition": {
+                    "content": "<?php\nphpinfo();\n?>",
+                    "owner": "root",
+                    "group": "root",
+                    "mode": "644"
+                }
+            },
+            { 
+                "name": "/var/www/html/info2.php",
+                "definition": {
+                    "content": "<?php\n\nheader(\"Content-Type: text/plain\");\n\necho \"Hello, world!\\n\";",
+                    "owner": "root",
+                    "group": "root",
+                    "mode": "644"
+                }
+            }
+        ],
+        "add-files": [
+            { 
+                "name": "/var/www/html/info.php",
+                "ensure": [
+                    "files./var/www/html/info.php.file-exists",
+                    "files./var/www/html/info.php.file-correct-mode"
+                ]
+            },
+            { 
+                "name": "/var/www/html/info2.php",
+                "ensure": [
+                    "files./var/www/html/info2.php.file-exists",
+                    "files./var/www/html/info2.php.file-correct-mode"
+                ]
+            }
+        ]
+    },
+
+    "actions": {
+        "packages": {
+            "is-installed": {
+                "do": "apt-get update; apt-get --yes --force-yes install ARG0",
+                "verify": "dpkg --get-selections | egrep \"^ARG0\\s+install\""
+            },
+            "is-not-installed": {
+                "do": "apt-get --auto-remove --yes --force-yes purge ARG0",
+                "verify": "test `/bin/false` -a `dpkg --get-selections | egrep \"^ARG0\\s+install\"`"
+            }
+        },
+        "services": {
+            "is-running": {
+                "verify": "service ARG0 status | grep \"is running\"",
+                "do": "service ARG0 restart"
+            },
+            "is-stopped": {
+                "verify": "service ARG0 status 2>&1 | egrep \"is not running|unrecognized\"",
+                "do": "service ARG0 stop"
+            },
+            "force-restart": {
+                "do": "service ARG0 restart"
+            }
+        },
+        "files": {
+            "file-does-not-exist" : {
+                "verify": "test ! -f ARG0",
+                "do": "rm ARG0"
+            },
+            "file-exists" : {
+                "args": [ "content" ],
+                "verify": "test -f ARG0 -a \"`echo 'ARG1' | md5sum | cut -d' ' -f1`\" = \"`md5sum ARG0 | cut -d' ' -f1`\"",
+                "do": "echo 'ARG1' > ARG0"
+            },
+            "file-correct-mode" : {
+                "args": [ "mode", "owner", "group" ],
+                "do": "chmod ARG1 ARG0; chown ARG2:ARG3 ARG0",
+                "verify": "test \"ARG1 ARG2 ARG3\" = \"`stat -c '%a %U %G' ARG0`\""
+            }
+        }
+    }
+}
