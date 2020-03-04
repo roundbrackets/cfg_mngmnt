@@ -25,13 +25,13 @@
         },
         "files": {
             "file-does-not-exist" : {
-                "verify": "test -f ARG0",
+                "verify": "test ! -f ARG0",
                 "do": "rm ARG0"
             },
             "file-exists" : {
                 "args": [ "content" ],
                 "verify": "test \"`echo 'ARG1' | md5sum | cut -d' ' -f1`\" = \"`md5sum ARG0 | cut -d' ' -f1`\"",
-                "do": "echo \"ARG1\" > ARG0"
+                "do": "echo 'ARG1' > ARG0"
             },
             "file-correct-mode" : {
                 "args": [ "mode", "owner", "group" ],
@@ -49,15 +49,6 @@
 
     "sections": {
         "packages": [ 
-            {
-                "name": "apache2",
-                "prerequisite": [
-                    "services.apache2.is-stopped"
-                ],
-                "ensure": [
-                    "is-not-installed"
-                ]
-            },
             {
                 "name": "apache2",
                 "ensure": [
@@ -89,9 +80,15 @@
 
         "files": [
             { 
-                "name": "/var/www/html/info.php",
+                "name": "/var/www/html/index.html",
+                "ensure": [
+                    "file-does-not-exist"
+                ]
+            },
+            { 
+                "name": "/var/www/html/index.php",
                 "definition": {
-                    "content": "<?php  phpinfo(); ?>",
+                    "content": "<?php\n\nheader(\"Content-Type: text/plain\");\n\necho \"Hello, world!\\n\";",
                     "owner": "root",
                     "group": "root",
                     "mode": "644"
