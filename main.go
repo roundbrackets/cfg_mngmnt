@@ -12,12 +12,12 @@ import (
 	"syscall"
 )
 
-// Add ability to clean
-// Add help
-// Add dependency on other section
+// No unit tests, very little validation.
 
+// Command line arg for manifest file
 var manifest = flag.String("manifest", "", "the manifest to use")
 
+// Define the manifest structure
 type Manifest struct {
 	Actions         Actions  `json:"actions"`
 	Sections        Sections `json:"sections"`
@@ -38,17 +38,23 @@ type Unit struct {
 type Actions map[string]map[string]Action
 type Sections map[string][]Unit
 
+// Global array for our registered actions
 var actions map[string]map[string]string
 
+// Main
 func main() {
 	flag.Parse()
 
+	// If manifest was ommited exit with usage.
+	// --help would probably be nice too.
 	if "" == *manifest {
 		fmt.Printf("Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 		return
 	}
 
+	// Unmasrhall the contents of the manifest file into
+	// a go data structure.
 	fmt.Printf("Parsing manifest %s\n", *manifest)
 	loadedManifest, err := loadManifest(manifest)
 	if nil != err {
@@ -58,6 +64,7 @@ func main() {
 
 	fmt.Println("")
 
+	// Register all the actions.
 	fmt.Printf("Registering actions\n")
 	err = registerActions(loadedManifest)
 	if nil != err {
@@ -67,6 +74,13 @@ func main() {
 
 	fmt.Println("")
 
+	// Use process-sections to loop through all the sections
+	// A consideration here would be to execute all the on-change
+	// last, after everything, however; that could break dependency
+	// chains.
+	// It would be nice to also be able to batch things, so that
+	// we only run apt-get update once and apt-get install p1 p2 p2..
+	// but that would require special kinds of sections.
 	for _, section := range (*loadedManifest).ProcessSections {
 		fmt.Printf("Processing section %s\n", section)
 		err = processSection(section, loadedManifest.Sections[section], actions)
@@ -133,6 +147,8 @@ func processSection(sectionName string, section []Unit, actions map[string]map[s
 	for _, unit := range section {
 		unitName := unit.Name
 		change := false
+
+		// Note that we return on error here, leaving the server in an awful state.
 
 		for _, a := range unit.Prerequisite {
 			fmt.Printf("\tProcessing prerequisites for %s\n", unitName)
