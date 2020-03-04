@@ -1,0 +1,191 @@
+local:~ $ ssh root@1.2.3.4
+root@1.2.3.4's password:
+Welcome to Ubuntu 14.04.4 LTS (GNU/Linux 3.13.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Wed Mar  4 08:42:53 UTC 2020
+
+  System load:  0.08              Processes:           98
+  Usage of /:   12.5% of 7.74GB   Users logged in:     0
+  Memory usage: 17%               IP address for eth0: 172.31.255.199
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+New release '16.04.6 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Wed Mar  4 08:42:53 2020 from c-69-181-94-112.hsd1.ca.comcast.net
+root:~# cd deploy/
+root:~/deploy# ./cfg_mngmnt --manifest ./manifests/cleanserver.json
+Parsing manifest ./manifests/cleanserver.json
+
+Registering actions
+
+Processing section packages
+	Processing prerequisites for apache2
+			service apache2 status 2>&1 | egrep "is not running|unrecognized"
+		Prerequisite services.apache2.is-stopped: ACTION REQUIRED 1
+			service apache2 stop
+			service apache2 status 2>&1 | egrep "is not running|unrecognized"
+		Prerequisite services.apache2.is-stopped: VERIFYING ACTION SUCCEDED 0
+	Processing ensures for apache2
+			test `/bin/false` -a `dpkg --get-selections | egrep "^apache2\s+install"`
+		Ensure packages.apache2.is-not-installed: ACTION REQUIRED 2
+			apt-get --auto-remove --yes --force-yes purge apache2
+			test `/bin/false` -a `dpkg --get-selections | egrep "^apache2\s+install"`
+		Ensure packages.apache2.is-not-installed: VERIFYING ACTION SUCCEDED 0
+
+	Processing ensures for php5
+			test `/bin/false` -a `dpkg --get-selections | egrep "^php5\s+install"`
+		Ensure packages.php5.is-not-installed: ACTION REQUIRED 2
+			apt-get --auto-remove --yes --force-yes purge php5
+			test `/bin/false` -a `dpkg --get-selections | egrep "^php5\s+install"`
+		Ensure packages.php5.is-not-installed: VERIFYING ACTION SUCCEDED 0
+
+
+Processing section files
+	Processing ensures for /var/www/html/index.php
+			test ! -f /var/www/html/index.php
+		Ensure files./var/www/html/index.php.file-does-not-exist: ACTION REQUIRED 1
+			rm /var/www/html/index.php
+			test ! -f /var/www/html/index.php
+		Ensure files./var/www/html/index.php.file-does-not-exist: VERIFYING ACTION SUCCEDED 0
+
+
+Processing section services
+
+
+root:~/deploy# logout
+Connection to 1.2.3.4 closed.
+local:~ $ curl -sv http://1.2.3.4
+* Rebuilt URL to: http://1.2.3.4/
+*   Trying 1.2.3.4...
+* TCP_NODELAY set
+* Connection failed
+* connect to 1.2.3.4 port 80 failed: Connection refused
+* Failed to connect to 1.2.3.4 port 80: Connection refused
+* Closing connection 0
+local:~ $ ssh root@1.2.3.4
+root@1.2.3.4's password:
+Welcome to Ubuntu 14.04.4 LTS (GNU/Linux 3.13.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com/
+
+  System information as of Wed Mar  4 08:56:39 UTC 2020
+
+  System load:  0.0               Processes:           103
+  Usage of /:   12.9% of 7.74GB   Users logged in:     0
+  Memory usage: 19%               IP address for eth0: 172.31.255.199
+  Swap usage:   0%
+
+  Graph this data and manage this system at:
+    https://landscape.canonical.com/
+
+  Get cloud support with Ubuntu Advantage Cloud Guest:
+    http://www.ubuntu.com/business/services/cloud
+
+New release '16.04.6 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+
+Last login: Wed Mar  4 08:56:39 2020 from c-69-181-94-112.hsd1.ca.comcast.net
+root:~# cd deploy/
+root:~/deploy# ./cfg_mngmnt --manifest ./manifests/webserver.json
+Parsing manifest ./manifests/webserver.json
+
+Registering actions
+
+Processing section packages
+	Processing ensures for apache2
+			dpkg --get-selections | egrep "^apache2\s+install"
+		Ensure packages.apache2.is-installed: ACTION REQUIRED 1
+			apt-get update; apt-get --yes --force-yes install apache2
+			dpkg --get-selections | egrep "^apache2\s+install"
+		Ensure packages.apache2.is-installed: VERIFYING ACTION SUCCEDED 0
+	Processing on-changes for apache2
+		OnChange services.apache2.force-restart: ACTION REQUIRED 1
+			service apache2 restart
+		OnChange services.apache2.force-restart: VERIFYING ACTION SKIPPED 0
+
+	Processing ensures for php5
+			dpkg --get-selections | egrep "^php5\s+install"
+		Ensure packages.php5.is-installed: ACTION REQUIRED 1
+			apt-get update; apt-get --yes --force-yes install php5
+			dpkg --get-selections | egrep "^php5\s+install"
+		Ensure packages.php5.is-installed: VERIFYING ACTION SUCCEDED 0
+	Processing on-changes for php5
+		OnChange services.apache2.force-restart: ACTION REQUIRED 1
+			service apache2 restart
+		OnChange services.apache2.force-restart: VERIFYING ACTION SKIPPED 0
+
+
+Processing section files
+	Processing ensures for /var/www/html/index.html
+			test ! -f /var/www/html/index.html
+		Ensure files./var/www/html/index.html.file-does-not-exist: ACTION REQUIRED 1
+			rm /var/www/html/index.html
+			test ! -f /var/www/html/index.html
+		Ensure files./var/www/html/index.html.file-does-not-exist: VERIFYING ACTION SUCCEDED 0
+
+	Processing ensures for /var/www/html/index.php
+			test "`echo '<?php
+
+header("Content-Type: text/plain");
+
+echo "Hello, world!\n";' | md5sum | cut -d' ' -f1`" = "`md5sum /var/www/html/index.php | cut -d' ' -f1`"
+		Ensure files./var/www/html/index.php.file-exists: ACTION REQUIRED 1
+			echo '<?php
+
+header("Content-Type: text/plain");
+
+echo "Hello, world!\n";' > /var/www/html/index.php
+			test "`echo '<?php
+
+header("Content-Type: text/plain");
+
+echo "Hello, world!\n";' | md5sum | cut -d' ' -f1`" = "`md5sum /var/www/html/index.php | cut -d' ' -f1`"
+		Ensure files./var/www/html/index.php.file-exists: VERIFYING ACTION SUCCEDED 0
+	Processing ensures for /var/www/html/index.php
+			test "644 root root" = "`stat -c '%a %U %G' /var/www/html/index.php`"
+		Ensure files./var/www/html/index.php.file-correct-mode: VERIFIED no further action required 0
+	Processing on-changes for /var/www/html/index.php
+		OnChange services.apache2.force-restart: ACTION REQUIRED 1
+			service apache2 restart
+		OnChange services.apache2.force-restart: VERIFYING ACTION SKIPPED 0
+
+
+Processing section services
+	Processing ensures for apache2
+			service apache2 status | grep "is running"
+		Ensure services.apache2.is-running: VERIFIED no further action required 0
+
+
+root:~/deploy# logout
+Connection to 1.2.3.4 closed.
+local:~ $ curl -sv http://1.2.3.4
+* Rebuilt URL to: http://1.2.3.4/
+*   Trying 1.2.3.4...
+* TCP_NODELAY set
+* Connected to 1.2.3.4 (1.2.3.4) port 80 (#0)
+> GET / HTTP/1.1
+> Host: 1.2.3.4
+> User-Agent: curl/7.54.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+< Date: Wed, 04 Mar 2020 08:57:53 GMT
+< Server: Apache/2.4.7 (Ubuntu)
+< X-Powered-By: PHP/5.5.9-1ubuntu4.29
+< Content-Length: 14
+< Content-Type: text/plain
+<
+Hello, world!
+* Connection #0 to host 1.2.3.4 left intact
+local:~ $
