@@ -8,7 +8,7 @@ To use:
 The manifest has three required components (granted that there is no validation
 to ensure this):
 
-* `actions` -- actions defined for a section
+* `actions` -- actions defined for a all units in a section
 * `process-sections` -- the order in which to process sections
 * `sections` -- the sections themselves
 
