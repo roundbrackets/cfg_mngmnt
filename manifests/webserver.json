@@ -1,0 +1,109 @@
+{
+    "actions": {
+        "packages": {
+            "is-installed": {
+                "do": "apt-get update; apt-get --yes --force-yes install ARG0",
+                "verify": "dpkg --get-selections | egrep \"^ARG0\\s+install\""
+            },
+            "is-not-installed": {
+                "do": "apt-get --auto-remove --yes --force-yes purge ARG0",
+                "verify": "test `/bin/false` -a `dpkg --get-selections | egrep \"^ARG0\\s+install\"`"
+            }
+        },
+        "services": {
+            "is-running": {
+                "verify": "service ARG0 status | grep \"is running\"",
+                "do": "service ARG0 restart"
+            },
+            "is-stopped": {
+                "verify": "service ARG0 status 2>&1 | egrep \"is not running|unrecognized\"",
+                "do": "service ARG0 stop"
+            },
+            "force-restart": {
+                "do": "service ARG0 restart"
+            }
+        },
+        "files": {
+            "file-does-not-exist" : {
+                "verify": "test -f ARG0",
+                "do": "rm ARG0"
+            },
+            "file-exists" : {
+                "args": [ "content" ],
+                "verify": "test \"`echo 'ARG1' | md5sum | cut -d' ' -f1`\" = \"`md5sum ARG0 | cut -d' ' -f1`\"",
+                "do": "echo \"ARG1\" > ARG0"
+            },
+            "file-correct-mode" : {
+                "args": [ "mode", "owner", "group" ],
+                "do": "chmod ARG1 ARG0; chown ARG2:ARG3 ARG0",
+                "verify": "test \"ARG1 ARG2 ARG3\" = \"`stat -c '%a %U %G' ARG0`\""
+            }
+        }
+    },
+
+    "process-sections": [
+        "packages",
+        "files",
+        "services"
+    ],
+
+    "sections": {
+        "packages": [ 
+            {
+                "name": "apache2",
+                "prerequisite": [
+                    "services.apache2.is-stopped"
+                ],
+                "ensure": [
+                    "is-not-installed"
+                ]
+            },
+            {
+                "name": "apache2",
+                "ensure": [
+                    "is-installed"
+                ],
+                "on-change": [
+                    "services.apache2.force-restart"
+                ]
+            },
+            {
+                "name": "php5",
+                "ensure": [
+                    "is-installed"
+                ],
+                "on-change": [
+                    "services.apache2.force-restart"
+                ]
+            }
+        ],
+
+        "services": [
+            { 
+                "name": "apache2",
+                "ensure": [
+                    "is-running"
+                ]
+            }
+        ],
+
+        "files": [
+            { 
+                "name": "/var/www/html/info.php",
+                "definition": {
+                    "content": "<?php  phpinfo(); ?>",
+                    "owner": "root",
+                    "group": "root",
+                    "mode": "644"
+                },
+                "ensure": [
+                    "file-exists",
+                    "file-correct-mode"
+                ],
+                "on-change": [
+                    "services.apache2.force-restart"
+                ]
+            }
+        ]
+    }
+}
