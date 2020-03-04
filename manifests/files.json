@@ -2,7 +2,7 @@
     "actions": {
         "files": {
             "file-does-not-exist" : {
-                "verify": "test -f ARG0",
+                "verify": "test ! -f ARG0",
                 "do": "rm ARG0"
             },
             "file-exists" : {
@@ -19,10 +19,19 @@
     },
 
     "process-sections": [
-        "files"
+        "remove-files",
+        "add-files"
     ],
 
     "sections": {
+        "remove-files": [
+            { 
+                "name": "/var/www/html/info.php",
+                "ensure": [
+                    "files./var/www/html/info.php.file-does-not-exist"
+                ]
+            }
+        ],
         "files": [
             { 
                 "name": "/var/www/html/info.php",
@@ -31,11 +40,7 @@
                     "owner": "root",
                     "group": "root",
                     "mode": "644"
-                },
-                "ensure": [
-                    "file-exists",
-                    "file-correct-mode"
-                ]
+                }
             },
             { 
                 "name": "/var/www/html/info2.php",
@@ -44,10 +49,22 @@
                     "owner": "root",
                     "group": "root",
                     "mode": "644"
-                },
+                }
+            }
+        ],
+        "add-files": [
+            { 
+                "name": "/var/www/html/info.php",
                 "ensure": [
-                    "file-exists",
-                    "file-correct-mode"
+                    "files./var/www/html/info.php.file-exists",
+                    "files./var/www/html/info.php.file-correct-mode"
+                ]
+            },
+            { 
+                "name": "/var/www/html/info2.php",
+                "ensure": [
+                    "files./var/www/html/info2.php.file-exists",
+                    "files./var/www/html/info2.php.file-correct-mode"
                 ]
             }
         ]
