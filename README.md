@@ -1,4 +1,4 @@
-# cfg_mngmnt the hardest configure tool for server config management
+# cfg_mngmnt the hardest to configure tool for server config management
 
 To use:
 `cfg_mngmnt --manifest <manifest.json>`
